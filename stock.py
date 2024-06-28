@@ -1,14 +1,21 @@
-# classes/stock.py
-
 import yfinance as yf
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta, datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import matplotlib.pyplot as plt
 
 class Stock:
     def __init__(self, ticker):
         self._ticker = ticker
-        print(f"The ticker: {ticker} was created")
+        self.company_name = ""
+        self.last_price = 0.0
+        self.change_percentage = 0.0
+        self.volume = 0
+        self.ytd_performance = 0.0
+        self.high_52_week = 0.0
+        self.low_52_week = 0.0
+        self.max_value = 0.0
+        self.average_value = 0.0
 
     def basic_info(self):
         # Get current date
@@ -108,8 +115,40 @@ class Stock:
         c.save()
         print(f"PDF generated: {filename}")
 
+    def generate_graph(self, start_date, end_date, filename="stock_graph.png"):
+        stock_data = yf.download(self._ticker, start=start_date, end=end_date)
+        plt.figure(figsize=(10, 6))
+        plt.plot(stock_data["Adj Close"], label=f'{self._ticker} Adj Close Price')
+        plt.title(f'{self._ticker} Stock Price from {start_date} to {end_date}')
+        plt.xlabel('Date')
+        plt.ylabel('Adjusted Close Price')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(filename)
+        plt.close()
+        print(f"Graph generated: {filename}")
+
+    def generate_moving_average(self, start_date, end_date, window, filename="moving_average.png"):
+        stock_data = yf.download(self._ticker, start=start_date, end=end_date)
+        stock_data[f'{window}-day MA'] = stock_data['Adj Close'].rolling(window=window).mean()
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(stock_data["Adj Close"], label=f'{self._ticker} Adj Close Price')
+        plt.plot(stock_data[f'{window}-day MA'], label=f'{window}-day Moving Average')
+        plt.title(f'{self._ticker} {window}-day Moving Average from {start_date} to {end_date}')
+        plt.xlabel('Date')
+        plt.ylabel('Price')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig(filename)
+        plt.close()
+        print(f"Moving average graph generated: {filename}")
+
 # Example usage
 #if __name__ == "__main__":
 #    apple_stock = Stock("AAPL")
 #    apple_stock.basic_info()
-#    apple_stock
+#    apple_stock.generate_pdf()
+#    apple_stock.generate_graph("2023-01-01", "2024-01-01")
+#    apple_stock.generate_moving_average("2023-01-01", "2024-01-01", 20)
+#
